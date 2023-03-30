@@ -1,0 +1,21 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Image Upload Example</title>
+  </head>
+  <body>
+    <h1>Image Upload Example</h1>
+    <% if (msg) { %>
+      <p><%= msg %></p>
+    <% } %>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+      <input type="file" name="myImage">
+      <input type="submit" value="Upload">
+    </form>
+    <% if (file) { %>
+      <img src="<%= file %>" alt="Uploaded Image">
+    <% } %>
+  </body>
+</html>
