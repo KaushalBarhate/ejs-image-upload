@@ -7,7 +7,7 @@ const app = express();
 
 // Set EJS as templating engine
 app.set('view engine', 'ejs');
-
+app.set('views', path.join(__dirname, 'views'));
 // Set storage engine
 const storage = multer.diskStorage({
   destination: './public/uploads/',
@@ -76,23 +76,46 @@ app.post('/upload', (req, res) => {
 });
 
 // Endpoint to delete an image name from the JSON file
-app.get('/delete:filename', (req, res) => {
-  let images = [];
-  if (fs.existsSync('./public/images.json')) {
-    images = JSON.parse(fs.readFileSync('./public/images.json'));
-  }
+// app.get('/delete/:filename', (req, res) => {
+//   let images = [];
+//   if (fs.existsSync('./public/images.json')) {
+//     images = JSON.parse(fs.readFileSync('./public/images.json'));
+//   }
 
-  const index = images.indexOf(req.params.filename);
-  if (index !== -1) {
-    images.splice(index, 1);
-    fs.writeFileSync('./public/images.json', JSON.stringify(images));
-    res.status(200).send('Image name deleted successfully');
-  } else {
-    res.status(404).send('Image not found in JSON file');
-  }
+//   const index = images.indexOf(req.params.filename);
+//   if (index !== -1) {
+//     images.splice(index, 1);
+//     fs.writeFileSync('./public/images.json', JSON.stringify(images));
+//     res.status(200).send('Image name deleted successfully');
+//   } else {
+//     res.status(404).send('Image not found in JSON file');
+//   }
+// });
+// Endpoint to delete an image and its name from the server
+app.get('/delete/:filename', (req, res) => {
+  const imagePath = './public/uploads/' + req.params.filename;
+  fs.unlink(imagePath, (err) => {
+    if (err) {
+      res.status(500).send('Error deleting image');
+    } else {
+      let images = [];
+      if (fs.existsSync('./public/images.json')) {
+        images = JSON.parse(fs.readFileSync('./public/images.json'));
+      }
+
+      const index = images.indexOf(req.params.filename);
+      if (index !== -1) {
+        images.splice(index, 1);
+        fs.writeFileSync('./public/images.json', JSON.stringify(images));
+        res.status(200).send('Image and its name deleted successfully');
+      } else {
+        res.status(404).send('Image not found in JSON file');
+      }
+    }
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 
-// app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
-module.exports = app
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// module.exports = app
