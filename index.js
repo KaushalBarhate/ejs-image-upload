@@ -76,7 +76,7 @@ app.post('/upload', (req, res) => {
 });
 
 // Endpoint to delete an image name from the JSON file
-app.delete('/upload/:filename', (req, res) => {
+app.get('/delete:filename', (req, res) => {
   let images = [];
   if (fs.existsSync('./public/images.json')) {
     images = JSON.parse(fs.readFileSync('./public/images.json'));
@@ -94,5 +94,5 @@ app.delete('/upload/:filename', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 module.exports = app
