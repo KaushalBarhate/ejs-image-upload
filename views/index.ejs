@@ -17,5 +17,9 @@
     <% if (file) { %>
       <img src="<%= file %>" alt="Uploaded Image">
     <% } %>
+        <% if (stdout) { %>
+      <p><%= stdout %></p>
+    <% } %>
+
   </body>
 </html>

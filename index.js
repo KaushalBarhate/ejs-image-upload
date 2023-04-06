@@ -1,29 +1,29 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
+const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const { exec } = require("child_process");
 const app = express();
 
 // Set EJS as templating engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 // Set storage engine
 const storage = multer.diskStorage({
-  destination: './public/uploads/',
-  filename: function(req, file, cb) {
-    cb(null,  Date.now() + path.extname(file.originalname));
-  }
+  destination: "./public/uploads/",
+  filename: function (_, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
 });
 
 // Init upload
 const upload = multer({
   storage: storage,
   limits: { fileSize: 1000000 },
-  fileFilter: function(req, file, cb) {
+  fileFilter: function (_, file, cb) {
     checkFileType(file, cb);
-  }
-}).single('myImage');
+  },
+}).single("myImage");
 
 // Check file type
 function checkFileType(file, cb) {
@@ -37,38 +37,52 @@ function checkFileType(file, cb) {
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb('Error: Images only!');
+    cb("Error: Images only!");
   }
 }
 
 // Public folder
-app.use(express.static('./public'));
+app.use(express.static("./public"));
 
-app.get('/', (req, res) => res.render('index'));
+app.get("/", (_, res) => res.render("index"));
 
-app.post('/upload', (req, res) => {
-  upload(req, res, err => {
+app.post("/upload", (req, res) => {
+  upload(req, res, (err) => {
     if (err) {
-      res.render('index', {
-        msg: err
+      res.render("index", {
+        msg: err,
       });
     } else {
       if (req.file == undefined) {
-        res.render('index', {
-          msg: 'Error: No File Selected!'
+        res.render("index", {
+          msg: "Error: No File Selected!",
         });
       } else {
         // Store the image name in a JSON file
+        console.log(req.file.filename, __dirname);
         let images = [];
-        if (fs.existsSync('./public/images.json')) {
-          images = JSON.parse(fs.readFileSync('./public/images.json'));
+        if (fs.existsSync("./public/images.json")) {
+          images = JSON.parse(fs.readFileSync("./public/images.json"));
         }
         images.push(req.file.filename);
-        fs.writeFileSync('./public/images.json', JSON.stringify(images));
-
-        res.render('index', {
-          msg: 'File Uploaded!',
-          file: `uploads/${req.file.filename}`
+        fs.writeFileSync("./public/images.json", JSON.stringify(images));
+        let save_path = `${__dirname}/public/uploads/${req.file.filename}`;
+        let cmd = `../build/face_attendance ../temp/test/ ${save_path} --nointeractive`;
+        let output = "";
+        exec(cmd, (err, stdout, stderr) => {
+          if (err) {
+            res
+              .status(500)
+              .send(
+                `Error running face attendance\n Err:${err} \n Stderr:${stderr}`
+              );
+          }
+          output = stdout;
+          res.render("index", {
+            msg: "File Uploaded!",
+            file: `uploads/${req.file.filename}`,
+            stdout: output,
+          });
         });
       }
     }
@@ -92,24 +106,24 @@ app.post('/upload', (req, res) => {
 //   }
 // });
 // Endpoint to delete an image and its name from the server
-app.get('/delete/:filename', (req, res) => {
-  const imagePath = './public/uploads/' + req.params.filename;
+app.get("/delete/:filename", (req, res) => {
+  const imagePath = "./public/uploads/" + req.params.filename;
   fs.unlink(imagePath, (err) => {
     if (err) {
-      res.status(500).send('Error deleting image');
+      res.status(500).send("Error deleting image");
     } else {
       let images = [];
-      if (fs.existsSync('./public/images.json')) {
-        images = JSON.parse(fs.readFileSync('./public/images.json'));
+      if (fs.existsSync("./public/images.json")) {
+        images = JSON.parse(fs.readFileSync("./public/images.json"));
       }
 
       const index = images.indexOf(req.params.filename);
       if (index !== -1) {
         images.splice(index, 1);
-        fs.writeFileSync('./public/images.json', JSON.stringify(images));
-        res.status(200).send('Image and its name deleted successfully');
+        fs.writeFileSync("./public/images.json", JSON.stringify(images));
+        res.status(200).send("Image and its name deleted successfully");
       } else {
-        res.status(404).send('Image not found in JSON file');
+        res.status(404).send("Image not found in JSON file");
       }
     }
   });
